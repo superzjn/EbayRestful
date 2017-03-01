@@ -1,9 +1,22 @@
 package com.company;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import json.JSONArray;
+import json.JSONObject;
+import org.apache.http.Consts;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HttpURLConnectionExample {
 
@@ -12,42 +25,7 @@ public class HttpURLConnectionExample {
     public static void main(String[] args) throws Exception {
 
         HttpURLConnectionExample http = new HttpURLConnectionExample();
-
-        System.out.println("Testing 1 - Send Http GET request");
-        http.sendGet();
-
-    }
-
-    // HTTP GET request
-    private void sendGet() throws Exception {
-
-        String url = "http://www.google.com/search?q=mkyong";
-
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-        // optional default is GET
-        con.setRequestMethod("GET");
-
-        //add request header
-        con.setRequestProperty("User-Agent", USER_AGENT);
-
-        int responseCode = con.getResponseCode();
-        System.out.println("\nSending 'GET' request to URL : " + url);
-        System.out.println("Response Code : " + responseCode);
-
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
-
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();
-
-        //print result
-        System.out.println(response.toString());
+        http.getApptoken();
 
     }
 
@@ -55,33 +33,36 @@ public class HttpURLConnectionExample {
     // HTTP GET request
     private void getApptoken() throws Exception {
 
+        //  String TargetUrl = "https://api.ebay.com/identity/v1/oauth2/token";
         String TargetUrl = "https://api.sandbox.ebay.com/identity/v1/oauth2/token";
 
-        URL url = new URL(TargetUrl);
-        HttpURLConnection con =  (HttpURLConnection)url.openConnection();
+        CloseableHttpClient client = HttpClientBuilder.create().build();
+        HttpPost postRequest = new HttpPost(TargetUrl);
+        postRequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        postRequest.addHeader("Authorization", "Basic RWJyaWRnZUwtZWJyaWRnZS1TQlgtZWU2ZWQ4MDYzLWU2ODQ4NDliOlNCWC1lNmVkODA2Mzg4Y2YtOWZlOC00ZGNiLTk5MDctMTU0OQ==");
 
-        con.setRequestMethod("POST");
-        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        con.setRequestProperty("Authorization","");
-        int responseCode = con.getResponseCode();
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("grant_type", "client_credentials"));
+        params.add(new BasicNameValuePair("scope", "https://api.ebay.com/oauth/api_scope"));
+        params.add(new BasicNameValuePair("redirect_uri", "Ebridge_LLC-EbridgeL-ebridg-lkijna"));
+        postRequest.setEntity(new UrlEncodedFormEntity(params, Consts.UTF_8));
 
 
-        System.out.println("\nSending 'GET' request to URL : " + url);
-        System.out.println("Response Code : " + responseCode);
+        CloseableHttpResponse response = client.execute(postRequest);
 
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
+        String bodyAsString = EntityUtils.toString(response.getEntity());
+        JSONObject myObject = new JSONObject(response.getEntity());
 
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
+        System.out.println("Here is response " + bodyAsString);
+        System.out.println("\n" + "Json" + myObject);
+        try {
+            HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                InputStream instream = entity.getContent();
+                instream.close();
+            }
+        } finally {
+            response.close();
         }
-        in.close();
-
-        //print result
-        System.out.println(response.toString());
-
     }
-
 }
